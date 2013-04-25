@@ -93,33 +93,35 @@ export PATH=$PREFIX/bin:$PATH
 export CC=arm-linux-gcc
 export AR=arm-linux-ar
 #### Compile Glibc ####
-tar xvf $Location/cross_source/glibc-2.2.4.tar.gz
-cd $Location/glibc-2.2.4/
-tar xvf $Location/cross_source/glibc-linuxthreads-2.2.4.tar.gz
+tar xvf $Location/cross_source/glibc-2.2.3.tar.gz
+cd $Location/glibc-2.2.3/
+tar xvf $Location/cross_source/glibc-linuxthreads-2.2.3.tar.gz
 
-mkdir -pv $Location/glibc-2.2.4_build
-cd $Location/glibc-2.2.4_build
+mkdir -pv $Location/glibc-2.2.3_build
+cd $Location/glibc-2.2.3_build
 
 BUILD_CC="gcc" \
 CC=$PREFIX/bin/arm-linux-gcc \
 AR=$PREFIX/bin/arm-linux-ar \
 RANLIB=$PREFIX/bin/arm-linux-ranlib \
-../glibc-2.2.4/configure arm-linux\
---target=arm-linux \
---host=arm-linux \
+../glibc-2.2.3/configure arm-linux \
 --prefix=$PREFIX \
+--target=arm-linux \
 --includedir=$PREFIX/arm-linux/include/linux:$PREFIX/arm-linux/include/asm \
+--with-headers=$PREFIX/arm-linux/include \
 --disable-profile \
 --disable-sanity-checks \
 --enable-add-ons=linuxthreads \
---with-headers=$PREFIX/arm-linux/include
-make
+-v 2>&1 | tee configure.out
+
+
+cd $Location/glibc-2.2.3_build
+sed 's!AR =!AR = '$PREFIX'/bin/arm-linux-ar #!g' -i $Location/glibc-2.2.3_build/config.make
+sed 's!CFLAGS =!CFLAGS = -O2 -fno-inline -D_FORTIFY_SOURCE=1!g' -i $Location/glibc-2.2.3_build/config.make
+
+
+make | tee make.out
 make install
-
-
-
-
-
 
 
 
@@ -129,4 +131,4 @@ make install
 
 # http://wenku.baidu.com/view/e726b2df5022aaea998f0f9c.html
 # http://lamp.linux.gov.cn/Linux/Glibc-GCC-Binutils-Install.html
-# http://marc.info/?l=glibc-alpha&m=106734995615477&w=2
+# http://victoryuembeddedlinux.blogspot.tw/2010/08/arm-cross-compiler-toolchain.html
