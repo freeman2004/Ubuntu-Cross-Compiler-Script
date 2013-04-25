@@ -83,7 +83,7 @@ cd $Location/gcc-2.95.3_build
 --prefix=$PREFIX \
 --disable-shared \
 --enable-languages=c
-make 
+make
 make install
 
 
@@ -104,15 +104,22 @@ BUILD_CC="gcc" \
 CC=$PREFIX/bin/arm-linux-gcc \
 AR=$PREFIX/bin/arm-linux-ar \
 RANLIB=$PREFIX/bin/arm-linux-ranlib \
-../glibc-2.2.4/configure \
+../glibc-2.2.4/configure arm-linux\
 --target=arm-linux \
 --host=arm-linux \
 --prefix=$PREFIX \
 --includedir=$PREFIX/arm-linux/include/linux:$PREFIX/arm-linux/include/asm \
---enable-add-ons \
+--disable-profile \
+--disable-sanity-checks \
+--enable-add-ons=linuxthreads \
 --with-headers=$PREFIX/arm-linux/include
-make 
+make
 make install
+
+
+
+
+
 
 
 
@@ -122,3 +129,4 @@ make install
 
 # http://wenku.baidu.com/view/e726b2df5022aaea998f0f9c.html
 # http://lamp.linux.gov.cn/Linux/Glibc-GCC-Binutils-Install.html
+# http://marc.info/?l=glibc-alpha&m=106734995615477&w=2
