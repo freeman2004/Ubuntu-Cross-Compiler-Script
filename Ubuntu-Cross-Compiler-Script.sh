@@ -1,6 +1,7 @@
 #### Parameter ####
 Location=`pwd`
-PREFIX=$Location'/4.3.2'
+All_Package=$Location/all_package/
+PREFIX=$All_Package'/cross_compile'
 
 #### Download Code ####
 #mkdir $Location/cross_source
@@ -26,103 +27,37 @@ PREFIX=$Location'/4.3.2'
 #wget http://ftp.gnu.org/gnu/libc/glibc-2.7.tar.gz
 #cd ..
 
-
-mkdir -vp $PREFIX
-
-#### Compile Binutils ####
-tar xvf $Location/cross_source/binutils-2.11.2.tar.gz
-mkdir -pv binutils-2.11.2_build
-cd binutils-2.11.2_build
-../binutils-2.11.2/configure --target=arm-linux --prefix=$PREFIX
-make && make install
-
-
-#### Copy linux header ####
-tar xvf $Location/cross_source/linux-2.4.17.tar.gz
-mv $Location/linux $Location/linux-2.4.17
-cd $Location/linux-2.4.17
-zcat $Location/cross_source/patch-2.4.17-rmk4.gz | patch -p1
-
-sed 's!ARCH :=!ARCH := arm#!g' -i $Location/linux-2.4.17/Makefile
-sed '/-O2 -fomit-frame-pointer/,/CROSS_COMPILE/{/-O2 -fomit-frame-pointer/!d}' -i ./Makefile
-sed '22iCROSS_COMPILE   = arm-linux-\n' -i ./Makefile
-make clean
-
-cd $Location/linux-2.4.17
-make ARCH=arm menuconfig
-
-cd $Location/linux-2.4.17/include/asm-arm/
-sleep 0.5
-rm -f arch proc
-sleep 0.5
-ln -s arch-clps711x arch
-sleep 0.5
-ln -s proc-armv proc
-
-mkdir -pv $Location/4.3.2/arm-linux/include # /4.3.2/arm-linux/ toolchain directory already have
-cp -dR $Location/linux-2.4.17/include/asm-arm $Location/4.3.2/arm-linux/include/asm
-cp -dR $Location/linux-2.4.17/include/linux $Location/4.3.2/arm-linux/include/linux
-cd $Location/4.3.2/arm-linux
-ln -s include sys-linux
-
-#### Compile GCC ####
-export PATH=$PREFIX/bin:$PATH
-
-tar xvf $Location/cross_source/gcc-core-2.95.3.tar.gz
-cp $Location/gcc-2.95.3/gcc/config/arm/t-linux{,.bak}
-sed 's/TARGET_LIBGCC2_CFLAGS =/TARGET_LIBGCC2_CFLAGS = -Dinhibit_libc -D__gthr_posix_h/g' -i $Location/gcc-2.95.3/gcc/config/arm/t-linux
-cp $Location/gcc-2.95.3/gcc/config/arm/arm.c{,.bak}
-sed 's!arm_prog_mode = TARGET_APCS_32 ? PROG_MODE_PROG32 : PROG_MODE_PROG26;!if(TARGET_APCS_32) arm_prgmode = PROG_MODE_PROG32; else arm_prgmode= PROG_MODE_PROG26;!g' -i $Location/gcc-2.95.3/gcc/config/arm/arm.c
-sed 's!O_CREAT!O_CREAT, 0777!g' -i $Location/gcc-2.95.3/gcc/collect2.c
-mkdir -pv $Location/gcc-2.95.3_build
-
-cd $Location/gcc-2.95.3_build
-../gcc-2.95.3/configure \
---target=arm-linux \
---host=arm-linux \
---prefix=$PREFIX \
---disable-shared \
---enable-languages=c
-make
-make install
+clear
 
 
 
-
-export PATH=$PREFIX/bin:$PATH
-export CC=arm-linux-gcc
-export AR=arm-linux-ar
-#### Compile Glibc ####
-tar xvf $Location/cross_source/glibc-2.2.3.tar.gz
-cd $Location/glibc-2.2.3/
-tar xvf $Location/cross_source/glibc-linuxthreads-2.2.3.tar.gz
-
-mkdir -pv $Location/glibc-2.2.3_build
-cd $Location/glibc-2.2.3_build
-
-BUILD_CC="gcc" \
-CC=$PREFIX/bin/arm-linux-gcc \
-AR=$PREFIX/bin/arm-linux-ar \
-RANLIB=$PREFIX/bin/arm-linux-ranlib \
-../glibc-2.2.3/configure arm-linux \
---prefix=$PREFIX \
---target=arm-linux \
---includedir=$PREFIX/arm-linux/include/linux:$PREFIX/arm-linux/include/asm \
---with-headers=$PREFIX/arm-linux/include \
---disable-profile \
---disable-sanity-checks \
---enable-add-ons=linuxthreads \
--v 2>&1 | tee configure.out
+echo "** Please select Action **"
+echo "** 1. Binutils**"
+echo "** 2. linux header **"
+echo "** 3. GCC **"
+echo "** 4. glibc **"
 
 
-cd $Location/glibc-2.2.3_build
-sed 's!AR =!AR = '$PREFIX'/bin/arm-linux-ar #!g' -i $Location/glibc-2.2.3_build/config.make
-sed 's!CFLAGS =!CFLAGS = -O2 -fno-inline -D_FORTIFY_SOURCE=1!g' -i $Location/glibc-2.2.3_build/config.make
+read Action                  # read character input
 
 
-make | tee make.out
-make install
-
+case $Action in
+    1)
+          . $(dirname $0)/sh/Binutils.sh
+          ;;
+    2)
+          . $(dirname $0)/sh/linux_header.sh
+          ;;
+    3)
+          . $(dirname $0)/sh/GCC.sh
+          ;;
+    4)
+          . $(dirname $0)/sh/glibc.sh
+          ;;                              
+    *)
+          clear
+          sleep 1;;           # leave the message on the screen for 5 seconds
+esac
 
 
 # http://www.ailis.de/~k/archives/19-arm-cross-compiling-howto.html#toolchain
